@@ -1,0 +1,455 @@
+{% extends 'base.html' %}
+
+{% block title %}Management Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2"><i class="bi bi-speedometer2"></i> Management Dashboard</h1>
+        <div>
+            <span class="badge bg-primary fs-6">Today's Date: 2024-08-14</span>
+        </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Employees</h5>
+                    <p class="display-4">{{ total_employees }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Tasks</h5>
+                    <p class="display-4">{{ total_tasks }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Avg Manager Rating</h5>
+                    <p class="display-4">{{ avg_rating }} / 100</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Strategic ROI & Risk Matrix -->
+    <div class="row mb-4">
+        <div class="col-md-7">
+            <div class="card bg-dark text-white border-primary shadow-sm h-100">
+                <div class="card-header border-primary">
+                    <h5 class="mb-0 text-primary"><i class="bi bi-cash-coin"></i> Salary ROI vs. Performance Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="salaryROIChart" style="max-height: 400px;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card bg-dark text-white border-danger shadow-sm h-100">
+                <div class="card-header border-danger">
+                    <h5 class="mb-0 text-danger"><i class="bi bi-shield-exclamation"></i> AI Strategic Risk Monitor</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr class="text-info">
+                                    <th>Employee</th>
+                                    <th>Risk Level</th>
+                                    <th>AI Prediction</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for emp in comparison_data %}
+                                <tr>
+                                    <td>{{ emp['Name'] }}</td>
+                                    <td>
+                                        {% if emp['risk_level'] == 'Critical' %}
+                                            <span class="badge bg-danger">CRITICAL</span>
+                                        {% elif emp['risk_level'] == 'Medium' %}
+                                            <span class="badge bg-warning text-dark">MEDIUM</span>
+                                        {% else %}
+                                            <span class="badge bg-success">STABLE</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small text-light opacity-75">{{ emp['risk_reasons'] }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Analytics Section -->
+    <div class="row mb-4">
+        <!-- Performance Radar Chart -->
+        <div class="col-md-6 mb-4">
+            <div class="card bg-dark text-white border-info shadow-sm h-100">
+                <div class="card-header border-info">
+                    <h5 class="mb-0 text-info"><i class="bi bi-graph-up"></i> Team Performance Radar</h5>
+                </div>
+                <div class="card-body">
+                    <div style="height: 350px;">
+                        <canvas id="performanceRadarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Productivity vs Task Completion Chart -->
+        <div class="col-md-6 mb-4">
+            <div class="card bg-dark text-white border-success shadow-sm h-100">
+                <div class="card-header border-success">
+                    <h5 class="mb-0 text-success"><i class="bi bi-bar-chart-fill"></i> Performance Comparison (Overall)</h5>
+                </div>
+                <div class="card-body">
+                    <div style="height: 350px;">
+                        <canvas id="comparisonBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manager Bias Audit Table -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-warning bg-dark text-white shadow-sm">
+                <div class="card-header bg-warning bg-opacity-10 border-warning">
+                    <h5 class="mb-0 text-warning"><i class="bi bi-search"></i> Employee Bias Audit (Actual Tasks vs. Manager Rating)</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-light opacity-75 small">This table compares hard data (Tasks Done) against a Manager's Rating to find favoritism or unfairness.</p>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr class="text-info">
+                                    <th>Employee Name</th>
+                                    <th>Completed Tasks (Hard Data)</th>
+                                    <th>Avg Task Score (%)</th>
+                                    <th>Manager Rating Avg (%)</th>
+                                    <th>Bias Risk</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for emp in comparison_data %}
+                                <tr>
+                                    <td>{{ emp['Name'] }}</td>
+                                    <td>{{ emp['completed_tasks'] }}</td>
+                                    <td>{{ emp['avg_task'] | round(1) }}%</td>
+                                    <td>{{ emp['avg_rating'] | round(1) }}%</td>
+                                    <td>
+                                        {% set bias = (emp['avg_rating'] - emp['avg_task']) | abs %}
+                                        {% if bias > 20 %}
+                                            <span class="badge bg-danger">HIGH BIAS DETECTED</span>
+                                        {% elif bias > 10 %}
+                                            <span class="badge bg-warning text-dark">POTENTIAL BIAS</span>
+                                        {% else %}
+                                            <span class="badge bg-success">CONSISTENT</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Performance and Recent Activity Column -->
+        <div class="col-lg-8">
+            <!-- Top Performers -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-star-fill"></i> Top Performers</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover text-white">
+                            <thead>
+                                <tr class="text-info">
+                                    <th>Employee Name</th>
+                                    <th>Productivity (%)</th>
+                                    <th>Task Completion (%)</th>
+                                    <th>Rating</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for index, row in top_performers.iterrows() %}
+                                <tr class="text-white">
+                                    <td class="text-white">{{ row['Name'] }}</td>
+                                    <td>
+                                        <div class="progress bg-secondary" style="height: 10px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ row['Productivity'] }}%"></div>
+                                        </div>
+                                        <small class="text-light">{{ row['Productivity'] }}%</small>
+                                    </td>
+                                    <td class="text-white">{{ row['Task_Completion'] }}%</td>
+                                    <td><span class="badge bg-success text-dark">{{ row['Manager_Rating'] }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Evaluations -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Employee Evaluations</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for index, row in recent_evaluations.iterrows() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">{{ row['Name'] }}</div>
+                                <small class="text-muted">{{ row['Qualitative_Feedback'] }}</small>
+                            </div>
+                            <span class="badge bg-info rounded-pill">Rating: {{ row['Manager_Rating'] }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side Column -->
+        <div class="col-lg-4">
+            <!-- Whistleblower / Grievances -->
+            <div class="card border-warning shadow-sm mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-megaphone-fill"></i> Whistleblower Reports</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 250px;">
+                        <table class="table table-sm table-striped mb-0 text-white">
+                            <tbody>
+                                {% for index, row in grievances.iterrows() %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <span class="badge {% if row['Status'] == 'Open' %}bg-danger{% else %}bg-success{% endif %}">{{ row['Status'] }}</span>
+                                                <strong class="text-white">{% if row['Is_Anonymous'] %}Anonymous{% else %}ID: {{ row['Employee_ID'] }}{% endif %}</strong>
+                                            </div>
+                                            {% if row['Status'] == 'Open' %}
+                                            <form action="/resolve_grievance/{{ row['Grievance_ID'] }}" method="POST">
+                                                <button type="submit" class="btn btn-xs btn-outline-info" style="font-size: 0.7rem; padding: 2px 5px;">Mark Noted</button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                        <br>
+                                        <small class="text-info">{{ row['Subject'] }}</small><br>
+                                        <span class="text-light small opacity-75">{{ row['Description'] }}</span><br>
+                                        <small class="text-light opacity-50" style="font-size: 0.7em;">{{ row['Date'] }}</small>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td class="text-center text-light opacity-50 py-3">No grievances reported.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Distribution -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Task Overview</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        {% for index, row in task_status.iterrows() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ row['Status'] }}
+                            <span class="badge bg-secondary rounded-pill">{{ row['count'] }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Red Flags -->
+            <div class="card border-danger shadow-sm mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-flag-fill"></i> Critical Red Flags</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 300px;">
+                        <table class="table table-sm table-striped mb-0">
+                            <tbody>
+                                {% for index, row in red_flags.iterrows() %}
+                                <tr class="table-danger">
+                                    <td>
+                                        <strong>ID: {{ row['Employee_ID'] }}</strong> - {{ row['Reason'] }}<br>
+                                        <small>{{ row['Timestamp'] }}</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Logs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">System Activity Logs</h5>
+                    <a href="/add_task" class="btn btn-sm btn-outline-success">Quick Assign Task</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for index, row in logs.iterrows() %}
+                                <tr>
+                                    <td>{{ row['username'] }}</td>
+                                    <td>{{ row['action'] }}</td>
+                                    <td><small>{{ row['timestamp'] }}</small></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const chartData = {{ comparison_data | tojson }};
+    const labels = chartData.map(d => d.Name);
+    const prodData = chartData.map(d => d.avg_prod);
+    const taskData = chartData.map(d => d.avg_task);
+    const ratingData = chartData.map(d => d.avg_rating);
+    const roiData = chartData.map(d => d.roi_score);
+    const salaryData = chartData.map(d => d.Salary);
+
+    // 0. Salary ROI Bubble Chart
+    new Chart(document.getElementById('salaryROIChart'), {
+        type: 'bubble',
+        data: {
+            datasets: chartData.map((d, i) => ({
+                label: d.Name,
+                data: [{
+                    x: d.Salary,
+                    y: (d.avg_prod + d.avg_task + d.avg_rating) / 3,
+                    r: d.roi_score * 2 // Radius based on ROI
+                }],
+                backgroundColor: d.roi_score > 10 ? 'rgba(35, 134, 54, 0.6)' : 'rgba(248, 81, 73, 0.6)',
+            }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { title: { display: true, text: 'Salary ($)', color: '#fff' }, ticks: { color: '#fff' } },
+                y: { title: { display: true, text: 'Avg Performance (%)', color: '#fff' }, ticks: { color: '#fff' }, min: 0, max: 100 }
+            },
+            plugins: {
+                legend: { labels: { color: '#fff' } },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const d = chartData[context.datasetIndex];
+                            return `${d.Name}: ROI Index ${d.roi_score}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // 1. Radar Chart (Performance Breakdown)
+    new Chart(document.getElementById('performanceRadarChart'), {
+        type: 'radar',
+        data: {
+            labels: ['Productivity', 'Task Completion', 'Manager Rating'],
+            datasets: chartData.map((d, i) => ({
+                label: d.Name,
+                data: [d.avg_prod, d.avg_task, d.avg_rating],
+                fill: true,
+                backgroundColor: `rgba(${50 + i*40}, ${150 + i*20}, ${255}, 0.2)`,
+                borderColor: `rgb(${50 + i*40}, ${150 + i*20}, ${255})`,
+                pointBackgroundColor: `rgb(${50 + i*40}, ${150 + i*20}, ${255})`,
+            }))
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: { color: 'rgba(255, 255, 255, 0.2)' },
+                    grid: { color: 'rgba(255, 255, 255, 0.2)' },
+                    pointLabels: { color: '#fff' },
+                    ticks: { display: false },
+                    suggestedMin: 0,
+                    suggestedMax: 100
+                }
+            },
+            plugins: {
+                legend: { labels: { color: '#fff' } }
+            }
+        }
+    });
+
+    // 2. Bar Chart (Comparison)
+    new Chart(document.getElementById('comparisonBarChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Productivity %',
+                    data: prodData,
+                    backgroundColor: '#58a6ff'
+                },
+                {
+                    label: 'Task Completion %',
+                    data: taskData,
+                    backgroundColor: '#238636'
+                }
+            ]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, max: 100, ticks: { color: '#fff' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                x: { ticks: { color: '#fff' }, grid: { display: false } }
+            },
+            plugins: {
+                legend: { labels: { color: '#fff' } }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Manager Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 text-white"><i class="bi bi-briefcase-fill"></i> Manager Dashboard</h1>
+        <span class="badge bg-primary fs-6">Audit Mode Active</span>
+    </div>
+
+    <!-- Department Pulse -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-dark text-white border-success shadow-sm">
+                <div class="card-header bg-success bg-opacity-10 border-success">
+                    <h5 class="mb-0 text-success">Department Productivity Pulse</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for team in team_status %}
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 border border-secondary rounded bg-secondary bg-opacity-10">
+                                <h6 class="text-info">{{ team['Name'] }}</h6>
+                                <div class="progress mb-2" style="height: 10px;">
+                                    {% set perc = (team['tasks_done'] / team['total_tasks'] * 100) if team['total_tasks'] > 0 else 0 %}
+                                    <div class="progress-bar bg-success" style="width: {{ perc }}%"></div>
+                                </div>
+                                <small class="text-light opacity-75">{{ team['tasks_done'] }}/{{ team['total_tasks'] }} Tasks Done</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evaluation Audit Panel -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card bg-dark text-white border-primary shadow-sm">
+                <div class="card-header bg-primary bg-opacity-10 border-primary">
+                    <h5 class="mb-0 text-white"><i class="bi bi-shield-check"></i> Evaluation Audit Panel (TL Submissions)</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr class="text-info">
+                                    <th>Employee</th>
+                                    <th>Rating (0-100)</th>
+                                    <th>Productivity</th>
+                                    <th>Task Completion</th>
+                                    <th>Feedback Highlights</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for eval in evaluations %}
+                                <tr class="text-white">
+                                    <td><strong>{{ eval['Name'] }}</strong></td>
+                                    <td><span class="badge bg-primary">{{ eval['Manager_Rating'] }}</span></td>
+                                    <td>{{ eval['Productivity'] }}%</td>
+                                    <td>{{ eval['Task_Completion'] }}%</td>
+                                    <td><small class="text-light opacity-75">"{{ eval['Qualitative_Feedback'][:50] }}..."</small></td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <form action="/update_evaluation_status/{{ eval['Evaluation_ID'] }}/Approved" method="POST">
+                                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                            </form>
+                                            <form action="/update_evaluation_status/{{ eval['Evaluation_ID'] }}/Rejected" method="POST">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Decline</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

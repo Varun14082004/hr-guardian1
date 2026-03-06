@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="height: 80vh;">
+    <div class="col-md-6">
+        <div class="card text-center shadow-lg bg-dark text-white border-secondary">
+            <div class="card-header bg-secondary bg-opacity-10 border-secondary p-4">
+                <h2 class="text-white"><i class="bi bi-shield-check text-info"></i> HR Guardian</h2>
+                <p class="lead mb-0 text-light opacity-75">Elite Performance & Integrity Suite</p>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-info small mb-4 fw-bold">Select Your Professional Role</p>
+                <div class="d-grid gap-3">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <a href="/login/employee" class="btn btn-lg btn-outline-light w-100 py-3"><i class="bi bi-person"></i> Employee</a>
+                        </div>
+                        <div class="col-6">
+                            <a href="/login/tl" class="btn btn-lg btn-outline-warning w-100 py-3"><i class="bi bi-people"></i> Team Leader</a>
+                        </div>
+                    </div>
+                    <a href="/login/manager" class="btn btn-lg btn-outline-primary py-3"><i class="bi bi-briefcase"></i> Manager (Auditor)</a>
+                    <hr class="border-secondary">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <a href="/login/hr" class="btn btn-lg btn-outline-info w-100 py-3"><i class="bi bi-person-badge"></i> HR</a>
+                        </div>
+                        <div class="col-6">
+                            <a href="/login/management" class="btn btn-lg btn-outline-danger w-100 py-3"><i class="bi bi-person-video3"></i> Management</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-top-0 pb-4">
+                <small class="text-muted">Protected by AI Integrity Guard</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

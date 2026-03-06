@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}HR Panel{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="text-white"><i class="bi bi-shield-lock-fill text-info"></i> HR Compliance Panel</h1>
+        </div>
+    </div>
+
+    <!-- Labour Compliance & Leave Approval -->
+    <div class="row mb-5">
+        <div class="col-md-7">
+            <div class="card bg-dark text-white border-primary shadow-sm h-100">
+                <div class="card-header bg-primary bg-opacity-10 border-primary">
+                    <h5 class="mb-0 text-white"><i class="bi bi-calendar-check"></i> Pending Leave Applications</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr class="text-info small">
+                                    <th>Employee</th>
+                                    <th>Leave Type</th>
+                                    <th>Dates</th>
+                                    <th>Reason</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for leave in pending_leaves %}
+                                <tr class="text-white">
+                                    <td><strong>{{ leave['Name'] }}</strong></td>
+                                    <td>{{ leave['Leave_Type'] }}</td>
+                                    <td class="small">{{ leave['Start_Date'] }} to {{ leave['End_Date'] }}</td>
+                                    <td class="small text-light opacity-75">{{ leave['Reason'] }}</td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <form action="/update_leave_status/{{ leave['Leave_ID'] }}/Approved" method="POST">
+                                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                            </form>
+                                            <form action="/update_leave_status/{{ leave['Leave_ID'] }}/Rejected" method="POST">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="5" class="text-center text-muted py-4">No pending leave applications.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card bg-dark text-white border-warning shadow-sm h-100">
+                <div class="card-header bg-warning bg-opacity-10 border-warning">
+                    <h5 class="mb-0 text-warning"><i class="bi bi-clock-history"></i> Overtime Compliance Alerts</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped mb-0">
+                            <thead>
+                                <tr class="text-warning small">
+                                    <th>Employee</th>
+                                    <th>Total Overtime (Hrs)</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ot in overtime_alerts %}
+                                <tr class="text-white">
+                                    <td>{{ ot['Name'] }}</td>
+                                    <td><strong>{{ ot['total_ot'] }} hrs</strong></td>
+                                    <td>
+                                        {% if ot['total_ot'] > 10 %}
+                                            <span class="badge bg-danger">EXCESSIVE</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">TRACKED</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="3" class="text-center text-muted py-4">No overtime tracked yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="border-secondary mb-5">
+
+    <!-- Add Employee Form -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-8">
+            <div class="card bg-dark text-white border-secondary">
+                <div class="card-header bg-secondary bg-opacity-10 border-secondary">
+                    <h3 class="text-white"><i class="bi bi-person-plus-fill"></i> Add New Employee</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id" class="form-label text-info">Employee ID</label>
+                                <input type="text" class="form-control bg-dark text-white border-secondary" id="id" name="id" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label text-info">Name</label>
+                                <input type="text" class="form-control bg-dark text-white border-secondary" id="name" name="name" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="salary" class="form-label text-info">Salary</label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="salary" name="salary" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="joining" class="form-label text-info">Joining Date</label>
+                                <input type="date" class="form-control bg-dark text-white border-secondary" id="joining" name="joining" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label text-info">Email</label>
+                                <input type="email" class="form-control bg-dark text-white border-secondary" id="email" name="email" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label text-info">Password</label>
+                                <input type="password" class="form-control bg-dark text-white border-secondary" id="password" name="password" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Register Employee</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

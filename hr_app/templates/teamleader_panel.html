@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+
+{% block title %}Team Leader Panel{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 text-white"><i class="bi bi-people-fill"></i> Team Leader Dashboard</h1>
+        <div>
+            <a href="/add_task" class="btn btn-success"><i class="bi bi-plus-circle"></i> Assign New Task</a>
+        </div>
+    </div>
+
+    <!-- Team Leave Management -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-dark text-white border-warning shadow-sm">
+                <div class="card-header bg-warning bg-opacity-10 border-warning">
+                    <h5 class="mb-0 text-warning"><i class="bi bi-calendar-event"></i> Pending Team Leave Requests</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr class="text-warning small">
+                                    <th>Employee</th>
+                                    <th>Leave Type</th>
+                                    <th>Dates</th>
+                                    <th>Reason</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for leave in pending_leaves %}
+                                <tr class="text-white">
+                                    <td><strong>{{ leave['Name'] }}</strong></td>
+                                    <td>{{ leave['Leave_Type'] }}</td>
+                                    <td class="small">{{ leave['Start_Date'] }} to {{ leave['End_Date'] }}</td>
+                                    <td class="small text-light opacity-75">{{ leave['Reason'] }}</td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <form action="/tl_approve_leave/{{ leave['Leave_ID'] }}/Approved" method="POST">
+                                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                            </form>
+                                            <form action="/tl_approve_leave/{{ leave['Leave_ID'] }}/Rejected" method="POST">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="5" class="text-center text-light opacity-50 py-4">No pending leave requests from your team.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-dark text-white border-info shadow-sm">
+                <div class="card-header bg-info bg-opacity-10 border-info">
+                    <h5 class="mb-0 text-info">My Team Performance Overview</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr class="text-info small">
+                                    <th>Employee ID</th>
+                                    <th>Name</th>
+                                    <th>Avg Productivity</th>
+                                    <th>Avg Task Score</th>
+                                    <th>Tasks Done</th>
+                                    <th>Pending</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for emp in team_data %}
+                                <tr class="text-white">
+                                    <td>{{ emp['Employee_ID'] }}</td>
+                                    <td>
+                                        <a href="javascript:void(0)" class="text-info text-decoration-none fw-bold" onclick="showTasks({{ emp['Employee_ID'] }}, '{{ emp['Name'] }}')">
+                                            {{ emp['Name'] }} <i class="bi bi-info-circle small"></i>
+                                        </a>
+                                    </td>
+                                    <td>{{ emp['avg_prod'] | round(1) }}%</td>
+                                    <td>{{ emp['avg_task'] | round(1) }}%</td>
+                                    <td><span class="badge bg-success">{{ emp['completed_tasks'] }}</span></td>
+                                    <td><span class="badge bg-warning text-dark">{{ emp['pending_tasks'] }}</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info" onclick="document.getElementById('id').value='{{ emp['Employee_ID'] }}'; document.getElementById('eval-form').scrollIntoView();">Evaluate</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Details Modal -->
+    <div class="modal fade" id="taskModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-white border-info">
+                <div class="modal-header border-info">
+                    <h5 class="modal-title" id="taskModalLabel">Tasks for Employee</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped">
+                            <thead>
+                                <tr class="text-info">
+                                    <th>Task Description</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="taskTableBody">
+                                <!-- Tasks will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function showTasks(empId, empName) {
+            document.getElementById('taskModalLabel').innerText = `Tasks for ${empName} (ID: ${empId})`;
+            const response = await fetch(`/get_employee_tasks/${empId}`);
+            const tasks = await response.json();
+            
+            const tableBody = document.getElementById('taskTableBody');
+            tableBody.innerHTML = '';
+            
+            if (tasks.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No tasks assigned.</td></tr>';
+            } else {
+                tasks.forEach(task => {
+                    let statusClass = 'bg-secondary';
+                    if (task.Status === 'Completed') statusClass = 'bg-success';
+                    else if (task.Status === 'In Progress') statusClass = 'bg-warning text-dark';
+                    else if (task.Status === 'Not Started') statusClass = 'bg-danger';
+
+                    tableBody.innerHTML += `
+                        <tr class="text-white">
+                            <td>${task.Task_Description}</td>
+                            <td>${task.Due_Date}</td>
+                            <td><span class="badge ${statusClass}">${task.Status}</span></td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            new bootstrap.Modal(document.getElementById('taskModal')).show();
+        }
+    </script>
+
+    <div class="row">
+        <!-- Evaluation Form -->
+        <div class="col-lg-7" id="eval-form">
+            <div class="card bg-dark text-white border-primary shadow-sm h-100">
+                <div class="card-header bg-primary bg-opacity-10 border-primary">
+                    <h5 class="mb-0 text-white">Submit New Performance Evaluation</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id" class="form-label text-info">Employee ID</label>
+                                <input type="text" class="form-control bg-dark text-white border-secondary" id="id" name="id" required placeholder="Enter ID">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="rating" class="form-label text-info">Manager Rating (0-100)</label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="rating" name="rating" min="0" max="100" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="prod" class="form-label text-light small">Productivity (0-100)</label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="prod" name="prod" min="0" max="100" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="task" class="form-label text-light small">Task Comp. (0-100)</label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="task" name="task" min="0" max="100" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="train" class="form-label text-light small">Training (0-100)</label>
+                                <input type="number" class="form-control bg-dark text-white border-secondary" id="train" name="train" min="0" max="100" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="qualitative_feedback" class="form-label text-info">Qualitative Feedback</label>
+                            <textarea class="form-control bg-dark text-white border-secondary" id="qualitative_feedback" name="qualitative_feedback" rows="4" required placeholder="Describe performance..."></textarea>
+                            <small class="text-warning opacity-75">AI will check for professional language and data consistency.</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Submit & AI Verify</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity Side Column -->
+        <div class="col-lg-5">
+            <div class="card bg-dark text-white border-secondary shadow-sm h-100">
+                <div class="card-header bg-secondary bg-opacity-10 border-secondary">
+                    <h5 class="mb-0 text-white">Your Recent Submissions</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush bg-dark">
+                        {% for eval in recent_evals %}
+                        <li class="list-group-item bg-dark text-white border-secondary py-3">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ eval['Name'] }}</strong>
+                                <span class="badge bg-primary">Rating: {{ eval['Manager_Rating'] }}</span>
+                            </div>
+                            <p class="small text-light opacity-75 mb-0 mt-1">"{{ eval['Qualitative_Feedback'] }}"</p>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item bg-dark text-white text-center py-4">No recent evaluations.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

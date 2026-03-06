@@ -1,0 +1,420 @@
+{% extends 'base.html' %}
+
+{% block title %}Employee Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-dark text-white border-secondary">
+                <div class="card-header bg-secondary bg-opacity-25 border-secondary d-flex justify-content-between align-items-center">
+                    <h3 class="text-white mb-0"><i class="bi bi-person-circle"></i> Welcome, Employee {{ session['username'] }}</h3>
+                    <div>
+                        <button id="startWork" class="btn btn-success"><i class="bi bi-play-circle"></i> Start Work Session</button>
+                        <button id="stopWork" class="btn btn-danger d-none"><i class="bi bi-stop-circle"></i> Stop Work Session</button>
+                        <span id="recordingStatus" class="ms-2 badge bg-danger d-none"><i class="bi bi-record-fill"></i> Monitoring Active</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recording Script -->
+    <script>
+        let mediaRecorder;
+        let recordingInterval;
+
+        document.getElementById('startWork').onclick = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { frameRate: { ideal: 5 } }, 
+                    audio: false
+                });
+
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp8' });
+                
+                mediaRecorder.ondataavailable = async (e) => {
+                    if (e.data.size > 0) {
+                        const formData = new FormData();
+                        formData.append('video', e.data);
+                        await fetch('/upload_recording', { method: 'POST', body: formData });
+                    }
+                };
+
+                mediaRecorder.start(30000); 
+
+                document.getElementById('startWork').classList.add('d-none');
+                document.getElementById('stopWork').classList.remove('d-none');
+                document.getElementById('recordingStatus').classList.remove('d-none');
+
+                stream.getVideoTracks()[0].onended = () => stopRecording();
+
+            } catch (err) {
+                console.error("Error: " + err);
+                alert("Please share your screen to start the work session.");
+            }
+        };
+
+        function stopRecording() {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+            document.getElementById('startWork').classList.remove('d-none');
+            document.getElementById('stopWork').classList.add('d-none');
+            document.getElementById('recordingStatus').classList.add('d-none');
+        }
+
+        document.getElementById('stopWork').onclick = stopRecording;
+    </script>
+
+    <!-- Insights & Anti-Politics Dashboard -->
+    <div class="row mb-4">
+        <!-- Objective Promotion Score -->
+        <div class="col-md-12 mb-4">
+            <div class="card bg-dark border-info shadow-sm">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-info mb-1"><i class="bi bi-graph-up-arrow"></i> Objective Promotion Score</h4>
+                        <p class="text-light mb-0 opacity-75">Based purely on Task Completion (60%) and Peer Reviews (40%). Managers cannot lower this.</p>
+                    </div>
+                    <div class="text-end">
+                        <h1 class="display-4 text-white mb-0">{{ insights['promotion_score'] }} <small class="fs-5 text-light opacity-50">/ 100</small></h1>
+                        {% if insights['promotion_score'] >= 80 %}
+                        <span class="badge bg-success">Eligible for Promotion</span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark">Needs Improvement</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-center bg-dark text-white border-primary shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-info">Total Days Present</h5>
+                    <p class="card-text display-6 text-white">{{ insights['total_days_present'] }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-dark text-white border-success shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Task Completion</h5>
+                    <p class="card-text display-6 text-white">{{ insights['task_completion_rate'] }}%</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-dark text-white border-warning shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">Peer Review Avg</h5>
+                    <p class="card-text display-6 text-white">{{ insights['avg_peer_score'] }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-dark text-white border-danger shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">Tasks Not Started</h5>
+                    <p class="card-text display-6 text-white">{{ insights['tasks_not_started'] }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Labour Compliance & Leave Section -->
+    <div class="row mb-4">
+        <div class="col-md-5">
+            <div class="card bg-dark text-white border-primary shadow-sm h-100">
+                <div class="card-header bg-primary bg-opacity-10 border-primary">
+                    <h5 class="mb-0 text-white"><i class="bi bi-calendar-plus"></i> Request Leave (Compliance)</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-light small opacity-75">Apply for formal leave according to international labour standards.</p>
+                    <form action="/apply_leave" method="POST">
+                        <div class="mb-3">
+                            <select class="form-select bg-dark text-white border-secondary" name="leave_type" required>
+                                <option value="" disabled selected>Select Leave Type...</option>
+                                <option value="Sick Leave">Sick Leave</option>
+                                <option value="Annual Leave">Annual Leave</option>
+                                <option value="Casual Leave">Casual Leave</option>
+                                <option value="Maternity/Paternity">Maternity/Paternity</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label text-info small">Start Date</label>
+                                <input type="date" class="form-control bg-dark text-white border-secondary" name="start_date" required>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label text-info small">End Date</label>
+                                <input type="date" class="form-control bg-dark text-white border-secondary" name="end_date" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <textarea class="form-control bg-dark text-white border-secondary" name="reason" rows="2" placeholder="Reason for leave..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary w-100">Submit Application</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card bg-dark text-white border-secondary shadow-sm h-100">
+                <div class="card-header border-secondary">
+                    <h5 class="mb-0">My Leave History & Status</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr class="text-info small">
+                                    <th>Type</th>
+                                    <th>Dates</th>
+                                    <th>Status</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for leave in leaves %}
+                                <tr class="text-white">
+                                    <td>{{ leave['Leave_Type'] }}</td>
+                                    <td class="small">{{ leave['Start_Date'] }} to {{ leave['End_Date'] }}</td>
+                                    <td>
+                                        {% if leave['Status'] == 'Approved' %}
+                                            <span class="badge bg-success">APPROVED</span>
+                                        {% elif leave['Status'] == 'Rejected' %}
+                                            <span class="badge bg-danger">REJECTED</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">PENDING</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small text-light opacity-75">{{ leave['Reason'][:30] }}...</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="4" class="text-center text-muted py-4">No leave records found.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security & Anti-Politics Section -->
+    <div class="row mb-4">
+        <!-- Change Password -->
+        <div class="col-md-4">
+            <div class="card bg-dark text-white border-secondary shadow-sm h-100">
+                <div class="card-header bg-secondary bg-opacity-10 border-secondary">
+                    <h5 class="mb-0 text-white"><i class="bi bi-shield-lock"></i> Security Settings</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-light small opacity-75">Update your password to ensure your account remains private.</p>
+                    <form action="/change_password" method="POST">
+                        <div class="mb-3">
+                            <input type="password" class="form-control bg-dark text-white border-secondary" name="new_password" placeholder="New Password" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" class="form-control bg-dark text-white border-secondary" name="confirm_password" placeholder="Confirm Password" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-info w-100">Update Password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Whistleblower System -->
+        <div class="col-md-4">
+            <div class="card bg-dark text-white border-danger shadow-sm h-100">
+                <div class="card-header bg-danger bg-opacity-25 border-danger">
+                    <h5 class="mb-0 text-white"><i class="bi bi-megaphone-fill text-danger"></i> Whistleblower & Grievance</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-light small opacity-75">Report toxic behavior, unfair treatment, or office politics directly to management. You can choose to remain anonymous.</p>
+                    <form action="/submit_grievance" method="POST">
+                        <div class="mb-3">
+                            <input type="text" class="form-control bg-dark text-white border-secondary" name="subject" placeholder="Subject / Incident" required>
+                        </div>
+                        <div class="mb-3">
+                            <textarea class="form-control bg-dark text-white border-secondary" name="description" rows="3" placeholder="Describe the situation..." required></textarea>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="anonymousCheck" name="anonymous">
+                            <label class="form-check-label text-warning" for="anonymousCheck">
+                                Submit Anonymously (Hide my ID)
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-danger w-100">Submit Report Securely</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 360 Peer Review -->
+        <div class="col-md-4">
+            <div class="card bg-dark text-white border-info shadow-sm h-100">
+                <div class="card-header bg-info bg-opacity-25 border-info">
+                    <h5 class="mb-0 text-white"><i class="bi bi-people-fill text-info"></i> 360° Peer Review</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-light small opacity-75">Evaluate a colleague. This protects employees from biased managers by showing their true team value.</p>
+                    <form action="/submit_peer_review" method="POST">
+                        <div class="mb-3">
+                            <select class="form-select bg-dark text-white border-secondary" name="reviewee_id" required>
+                                <option value="" disabled selected>Select Colleague...</option>
+                                {% for col in colleagues %}
+                                <option value="{{ col['Employee_ID'] }}">{{ col['Name'] }} (ID: {{ col['Employee_ID'] }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-info">Teamwork & Collaboration Score (0-100)</label>
+                            <input type="number" class="form-control bg-dark text-white border-secondary" name="score" min="0" max="100" required>
+                        </div>
+                        <div class="mb-3">
+                            <textarea class="form-control bg-dark text-white border-secondary" name="comments" rows="2" placeholder="Why are they good/bad to work with?" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-info text-dark w-100">Submit Peer Review</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grievance Status Tracker -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-dark text-white border-danger shadow-sm">
+                <div class="card-header bg-danger bg-opacity-10 border-danger">
+                    <h5 class="mb-0 text-white"><i class="bi bi-clock-history"></i> My Reported Grievances & Status</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr class="text-danger small">
+                                    <th>Subject</th>
+                                    <th>Date Submitted</th>
+                                    <th>Current Status</th>
+                                    <th>Acknowledgment</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for g in grievances %}
+                                <tr class="text-white">
+                                    <td>{{ g['Subject'] }}</td>
+                                    <td><small>{{ g['Date'] }}</small></td>
+                                    <td>
+                                        {% if g['Status'] == 'Open' %}
+                                            <span class="badge bg-danger">Processing</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Noted by Management</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if g['Status'] != 'Open' %}
+                                            <small class="text-success"><i class="bi bi-check-all"></i> Read & Acknowledged by Upper Management</small>
+                                        {% else %}
+                                            <small class="text-muted">Awaiting Review</small>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="4" class="text-center text-light opacity-50 py-4">No personal grievances reported. (Anonymous reports are not shown here for security).</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tasks -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-dark text-white border-secondary shadow-sm">
+                <div class="card-header bg-secondary bg-opacity-10 border-secondary">
+                    <h4 class="mb-0 text-white"><i class="bi bi-list-task"></i> My Tasks</h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-dark mb-0">
+                            <thead>
+                                <tr class="text-info">
+                                    <th>Task Description</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for index, row in tasks.iterrows() %}
+                                <tr class="text-white">
+                                    <td>{{ row['Task_Description'] }}</td>
+                                    <td>{{ row['Due_Date'] }}</td>
+                                    <td>
+                                        <form action="/update_task_status" method="POST" class="d-flex align-items-center gap-2">
+                                            <input type="hidden" name="task_id" value="{{ row['Task_ID'] }}">
+                                            <select name="status" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="this.form.submit()">
+                                                <option value="Not Started" {% if row['Status'] == 'Not Started' %}selected{% endif %}>Not Started</option>
+                                                <option value="In Progress" {% if row['Status'] == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                                <option value="Completed" {% if row['Status'] == 'Completed' %}selected{% endif %}>Completed</option>
+                                            </select>
+                                            {% if row['Status'] == 'Completed' %}
+                                                <i class="bi bi-check-circle-fill text-success"></i>
+                                            {% elif row['Status'] == 'In Progress' %}
+                                                <i class="bi bi-hourglass-split text-warning"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-danger"></i>
+                                            {% endif %}
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card bg-dark text-white border-secondary shadow-sm">
+                <div class="card-header bg-secondary bg-opacity-10 border-secondary">
+                    <h4 class="mb-0 text-white"><i class="bi bi-calendar-check"></i> My Attendance</h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-dark mb-0">
+                            <thead>
+                                <tr class="text-info">
+                                    <th>Date</th>
+                                    <th>Login Time</th>
+                                    <th>Logout Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for index, row in attendance.iterrows() %}
+                                <tr class="text-white">
+                                    <td>{{ row['Date'] }}</td>
+                                    <td>{{ row['Login_Time'] }}</td>
+                                    <td>{{ row['Logout_Time'] if row['Logout_Time'] else 'N/A' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+/* --- Background --- */
+body {
+    background-color: #0d1117;
+    color: #f0f6fc; /* Brighter text color for general body */
+}
+
+#particles-js {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: -1;
+}
+
+/* --- Content & Cards --- */
+.content-container {
+    position: relative;
+    z-index: 1;
+}
+
+.card {
+    background-color: rgba(22, 27, 34, 0.8);
+    border: 1px solid #30363d;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #f0f6fc; /* Ensure card text is bright */
+}
+
+.card-header {
+    background-color: rgba(22, 27, 34, 0.9);
+    border-bottom: 1px solid #30363d;
+    color: #f0f6fc;
+}
+
+/* --- Forms & Tables --- */
+.form-label {
+    color: #f0f6fc; /* Ensure form labels are bright */
+}
+
+.form-control, .form-select {
+    background-color: #0d1117;
+    color: #f0f6fc; /* Ensure input text is bright */
+    border: 1px solid #30363d;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: #0d1117;
+    color: #f0f6fc;
+    border-color: #58a6ff;
+    box-shadow: 0 0 0 0.25rem rgba(88, 166, 255, 0.25);
+}
+
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-striped-bg: rgba(110, 118, 129, 0.1);
+    --bs-table-hover-bg: rgba(110, 118, 129, 0.2);
+    color: #f0f6fc; /* Ensure table text is bright */
+}
+
+/* --- Buttons & Links --- */
+.btn-primary {
+    background-color: #238636;
+    border-color: #238636;
+}
+
+.btn-primary:hover {
+    background-color: #2ea043;
+    border-color: #2ea043;
+}
+
+.btn-success {
+    background-color: #58a6ff;
+    border-color: #58a6ff;
+    color: #0d1117;
+}
+
+.btn-success:hover {
+    background-color: #80baff;
+    border-color: #80baff;
+}
+
+.alert-danger {
+    background-color: rgba(248, 81, 73, 0.3);
+    border-color: rgba(248, 81, 73, 0.5);
+    color: #f8d7da;
+}
+
+.alert-success {
+    background-color: rgba(46, 160, 67, 0.3);
+    border-color: rgba(46, 160, 67, 0.5);
+    color: #d1e7dd;
+}
+
+/* --- Task Status Badges --- */
+.badge-completed {
+    background-color: #2ea043; /* GitHub green */
+    color: #f0f6fc;
+}
+
+.badge-in-progress {
+    background-color: #d29922; /* GitHub yellow/orange */
+    color: #0d1117;
+}
+
+.badge-not-started {
+    background-color: #f85149; /* GitHub red */
+    color: #f0f6fc;
+}
